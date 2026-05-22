@@ -367,7 +367,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--gray-50);color:var(--gray
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <div class="card-title" style="margin:0;">📊 รายชื่อผู้สอบ</div>
-          <button class="btn btn-ghost btn-sm" onclick="clearResults()">🗑️ ล้างข้อมูล</button>
+          <div style="display:flex;gap:8px;">
+            <a href="https://docs.google.com/spreadsheets/d/1ihCQg1Gs11VKUUzPaAYYR6XPrcE2MsiMgrzGCowOHCI/edit" target="_blank" class="btn btn-primary btn-sm" style="text-decoration:none;">📊 เปิด Google Sheets</a>
+            <button class="btn btn-ghost btn-sm" onclick="clearResults()">🗑️ ล้างข้อมูล</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table class="result-table">
