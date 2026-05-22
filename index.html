@@ -857,27 +857,77 @@ function resetExam() {
 function renderResults() {
   const tbody = document.getElementById('result-tbody');
   const empty = document.getElementById('result-empty');
-  document.getElementById('stat-total').textContent = results.length;
-  const passed = results.filter(r=>r.pass).length;
-  document.getElementById('stat-pass').textContent = passed;
-  const avg = results.length ? Math.round(results.reduce((s,r)=>s+r.pct,0)/results.length) : 0;
-  document.getElementById('stat-avg').textContent = avg + '%';
+  const url = cfg.sheetUrl;
 
-  if (results.length === 0) {
+  // แสดง loading
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--gray-400);">⏳ กำลังโหลดข้อมูลจาก Google Sheets...</td></tr>';
+  empty.style.display = 'none';
+
+  if (!url) {
     tbody.innerHTML = '';
     empty.style.display = 'block';
+    empty.innerHTML = '<div>ยังไม่ได้ตั้งค่า Google Apps Script URL</div>';
     return;
   }
-  empty.style.display = 'none';
-  tbody.innerHTML = [...results].reverse().map((r,i) => `
-    <tr>
-      <td>${results.length-i}</td>
-      <td>${r.name}</td>
-      <td>${r.dept}</td>
-      <td>${r.date}</td>
-      <td>${r.score}/${r.total} (${r.pct}%)</td>
-      <td><span class="pass-chip ${r.pass?'pass':'fail'}">${r.pass?'ผ่าน':'ไม่ผ่าน'}</span></td>
-    </tr>`).join('');
+
+  fetch(url + '?action=get', { method: 'GET', mode: 'cors' })
+    .then(r => r.json())
+    .then(res => {
+      if (!res.data || res.data.length <= 1) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        empty.innerHTML = '<div>ยังไม่มีผลสอบ</div>';
+        document.getElementById('stat-total').textContent = 0;
+        document.getElementById('stat-pass').textContent = 0;
+        document.getElementById('stat-avg').textContent = '0%';
+        return;
+      }
+      // ข้ามแถว header (แถวแรก)
+      const rows = res.data.slice(1).filter(r => r[1]);
+      const total = rows.length;
+      const passed = rows.filter(r => r[6] === 'ผ่าน').length;
+      const avg = total ? Math.round(rows.reduce((s,r) => s + (parseFloat(r[5]) || 0), 0) / total) : 0;
+
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-pass').textContent = passed;
+      document.getElementById('stat-avg').textContent = avg + '%';
+
+      empty.style.display = 'none';
+      tbody.innerHTML = [...rows].reverse().map((r, i) => `
+        <tr>
+          <td>${total - i}</td>
+          <td>${r[1] || '-'}</td>
+          <td>${r[2] || '-'}</td>
+          <td>${r[3] || '-'}</td>
+          <td>${r[4] || '-'} (${r[5] || '-'})</td>
+          <td><span class="pass-chip ${r[6]==='ผ่าน'?'pass':'fail'}">${r[6] || '-'}</span></td>
+        </tr>`).join('');
+    })
+    .catch(() => {
+      // fallback to localStorage
+      const total = results.length;
+      const passed = results.filter(r=>r.pass).length;
+      const avg = total ? Math.round(results.reduce((s,r)=>s+r.pct,0)/total) : 0;
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-pass').textContent = passed;
+      document.getElementById('stat-avg').textContent = avg + '%';
+      if (total === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        empty.innerHTML = '<div>ไม่สามารถโหลดข้อมูลจาก Sheets ได้</div>';
+        return;
+      }
+      empty.style.display = 'none';
+      tbody.innerHTML = [...results].reverse().map((r,i) => `
+        <tr>
+          <td>${total-i}</td>
+          <td>${r.name}</td>
+          <td>${r.dept}</td>
+          <td>${r.date}</td>
+          <td>${r.score}/${r.total} (${r.pct}%)</td>
+          <td><span class="pass-chip ${r.pass?'pass':'fail'}">${r.pass?'ผ่าน':'ไม่ผ่าน'}</span></td>
+        </tr>`).join('');
+    });
 }
 
 function clearResults() {
