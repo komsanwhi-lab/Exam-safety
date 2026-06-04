@@ -232,10 +232,28 @@ body{font-family:'Sarabun',sans-serif;background:var(--gray-50);color:var(--gray
     <div class="card">
       <div class="card-title">📋 ข้อมูลผู้สอบ</div>
       <div class="field"><label>ชื่อ-สกุล *</label><input type="text" id="f-name" placeholder="กรอกชื่อ-สกุล"/></div>
-      <div class="row2">
-        <div class="field"><label>หน่วยงาน / แผนก *</label><input type="text" id="f-dept" placeholder="หน่วยงาน"/></div>
-        <div class="field"><label>วันที่อบรม</label><input type="date" id="f-date"/></div>
+      <div class="field">
+        <label>หน่วยงาน / แผนก *</label>
+        <select id="f-dept" onchange="toggleOther(this.value)">
+          <option value="">-- เลือกแผนก --</option>
+          <option value="HR&amp;GA">HR&amp;GA</option>
+          <option value="Accumulator">Accumulator</option>
+          <option value="Engineering">Engineering</option>
+          <option value="Maintenance">Maintenance</option>
+          <option value="SPP">SPP</option>
+          <option value="QC">QC</option>
+          <option value="Warehouse">Warehouse</option>
+          <option value="บัญชี">บัญชี</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Purchase">Purchase</option>
+          <option value="อื่นๆ">อื่นๆ (ระบุ)</option>
+        </select>
       </div>
+      <div class="field" id="other-dept-wrap" style="display:none;">
+        <label>ระบุแผนก *</label>
+        <input type="text" id="f-dept-other" placeholder="กรอกชื่อแผนก"/>
+      </div>
+      <div class="field"><label>วันที่อบรม</label><input type="date" id="f-date"/></div>
       <button class="btn btn-primary btn-full" id="start-btn" onclick="startExam()">เริ่มทำแบบทดสอบ →</button>
     </div>
   </div>
@@ -682,9 +700,12 @@ function importDefaultQ() {
 // ======== EXAM ========
 function startExam() {
   const name = document.getElementById('f-name').value.trim();
-  const dept = document.getElementById('f-dept').value.trim();
+  const deptSelect = document.getElementById('f-dept').value;
+  const deptOther = document.getElementById('f-dept-other').value.trim();
+  const dept = deptSelect === 'อื่นๆ' ? deptOther : deptSelect;
   if (!name) { document.getElementById('f-name').classList.add('error'); document.getElementById('f-name').focus(); return; }
-  if (!dept) { document.getElementById('f-dept').classList.add('error'); document.getElementById('f-dept').focus(); return; }
+  if (!deptSelect) { document.getElementById('f-dept').classList.add('error'); document.getElementById('f-dept').focus(); return; }
+  if (deptSelect === 'อื่นๆ' && !deptOther) { document.getElementById('f-dept-other').classList.add('error'); document.getElementById('f-dept-other').focus(); return; }
   if (!document.getElementById('f-date').value) document.getElementById('f-date').valueAsDate = new Date();
 
   activeQuestions = cfg.shuffle ? shuffle([...questions]) : [...questions];
@@ -852,6 +873,8 @@ function resetExam() {
   answers = [];
   document.getElementById('f-name').value='';
   document.getElementById('f-dept').value='';
+  document.getElementById('f-dept-other').value='';
+  document.getElementById('other-dept-wrap').style.display='none';
   gotoPage('page-exam-entry');
   updateEntryPage();
 }
@@ -947,6 +970,13 @@ if (questions.length === 0) {
   localStorage.setItem('exam_questions', JSON.stringify(questions));
 }
 updateEntryPage();
+
+
+function toggleOther(val) {
+  const wrap = document.getElementById('other-dept-wrap');
+  wrap.style.display = val === 'อื่นๆ' ? 'block' : 'none';
+  if (val !== 'อื่นๆ') document.getElementById('f-dept-other').value = '';
+}
 
 document.getElementById('modal-q').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
